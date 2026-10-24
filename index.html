@@ -1,0 +1,367 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1426">
+<title>weather72 — погода в России</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px 15px;
+  min-height: 100vh;
+  background: #0b1426;
+  color: #f4f7ff;
+  font-family: Arial, sans-serif;
+}
+
+.app { max-width: 600px; margin: auto; }
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: #253d63;
+  font-size: 27px;
+}
+
+h1 { margin: 0; font-size: 25px; }
+.subtitle { margin-top: 5px; color: #9aabc7; font-size: 13px; }
+
+.search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #13213a;
+  border: 1px solid #304565;
+  border-radius: 15px;
+  padding: 14px;
+}
+
+.search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: white;
+  font-size: 16px;
+}
+
+.hint { color: #8295b4; font-size: 12px; }
+
+h2 { font-size: 16px; margin-top: 27px; }
+
+.results { margin-top: 8px; }
+
+.city-button {
+  width: 100%;
+  padding: 13px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+  color: white;
+  background: #172943;
+  border: 1px solid #2b405e;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.city-button small { color: #9aabc7; }
+
+.history {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.history button {
+  min-width: 0;
+  padding: 12px 8px;
+  border: 1px solid #2b405e;
+  border-radius: 13px;
+  background: #172943;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+}
+
+.history .city-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.history .temp {
+  display: block;
+  margin-top: 9px;
+  font-size: 22px;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 22px;
+  background: linear-gradient(145deg, #203858, #13213a);
+  border: 1px solid #304565;
+  border-radius: 22px;
+}
+
+.weather-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weather-icon { font-size: 43px; }
+.temperature { font-size: 60px; font-weight: bold; margin: 20px 0 5px; }
+.description { color: #c7d7ee; }
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.metric {
+  padding: 11px 8px;
+  border-radius: 12px;
+  background: #ffffff0c;
+}
+
+.metric small { color: #9aabc7; display: block; font-size: 11px; }
+.metric strong { display: block; margin-top: 8px; font-size: 14px; }
+
+.message { color: #9aabc7; font-size: 13px; line-height: 1.5; }
+footer { margin-top: 25px; color: #7186a8; font-size: 11px; text-align: center; }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="logo">☀️</div>
+    <div>
+      <h1>weather72</h1>
+      <div class="subtitle">Погода в городах России</div>
+    </div>
+  </header>
+
+  <div class="search">
+    <span>🔎</span>
+    <input id="search" placeholder="Найти город России..." autocomplete="off">
+  </div>
+  <p class="hint">Введи название города, например Тюмень или Казань</p>
+
+  <div id="results" class="results"></div>
+
+  <h2>🕒 Последние города</h2>
+  <div id="history" class="history"></div>
+
+  <div id="weather">
+    <div class="card" style="text-align:center">
+      <div style="font-size:48px">🌤️</div>
+      <h2>Погода начинается здесь</h2>
+      <p class="message">Найди город, чтобы узнать температуру, влажность и ветер.</p>
+    </div>
+  </div>
+
+  <footer>weather72 · Данные о погоде: Open-Meteo</footer>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
+
+const searchInput = document.getElementById("search");
+const results = document.getElementById("results");
+const historyBox = document.getElementById("history");
+const weatherBox = document.getElementById("weather");
+
+let recent = [];
+let searchTimer;
+let requestNumber = 0;
+
+try {
+  recent = JSON.parse(localStorage.getItem("weather72_history") || "[]");
+  if (!Array.isArray(recent)) recent = [];
+} catch {
+  recent = [];
+}
+
+function safe(text) {
+  return String(text ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  })[c]);
+}
+
+function description(code) {
+  if (code === 0) return ["Ясно", "☀️"];
+  if ([1,2].includes(code)) return ["Переменная облачность", "🌤️"];
+  if (code === 3) return ["Пасмурно", "☁️"];
+  if ([45,48].includes(code)) return ["Туман", "🌫️"];
+  if ([51,53,55,56,57].includes(code)) return ["Морось", "🌦️"];
+  if ([61,63,65,66,67,80,81,82].includes(code)) return ["Дождь", "🌧️"];
+  if ([71,73,75,77,85,86].includes(code)) return ["Снег", "🌨️"];
+  if ([95,96,99].includes(code)) return ["Гроза", "⛈️"];
+  return ["Погодные условия", "🌡️"];
+}
+
+function renderHistory() {
+  if (!recent.length) {
+    historyBox.innerHTML = '<p class="message">Здесь появятся три последних просмотренных города.</p>';
+    return;
+  }
+
+  historyBox.innerHTML = recent.map((c, i) => `
+    <button data-history="${i}">
+      <span class="city-name">${safe(c.name)}</span>
+      <span class="temp">${Number.isFinite(c.temp) ? Math.round(c.temp) + "°" : "—"}</span>
+      <span>${c.icon || "🌤️"}</span>
+    </button>
+  `).join("");
+}
+
+async function searchCities(query) {
+  const id = ++requestNumber;
+  if (query.trim().length < 2) {
+    results.innerHTML = "";
+    return;
+  }
+
+  results.innerHTML = '<p class="message">Ищем города…</p>';
+
+  try {
+    const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+    url.search = new URLSearchParams({
+      name: query.trim(),
+      count: "20",
+      language: "ru",
+      format: "json"
+    });
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Ошибка поиска");
+    const data = await response.json();
+    if (id !== requestNumber) return;
+
+    const cities = (data.results || [])
+      .filter(c => c.country_code === "RU")
+      .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+
+    if (!cities.length) {
+      results.innerHTML = '<p class="message">Город не найден. Попробуй другое название.</p>';
+      return;
+    }
+
+    results.innerHTML = cities.map((c, i) => `
+      <button class="city-button" data-result="${i}">
+        <span>${safe(c.name)}<br><small>${safe(c.admin1 || "Россия")}</small></span>
+        <span>›</span>
+      </button>
+    `).join("");
+
+    results._cities = cities;
+  } catch {
+    if (id === requestNumber) {
+      results.innerHTML = '<p class="message">Не удалось выполнить поиск. Проверь интернет.</p>';
+    }
+  }
+}
+
+async function loadWeather(city) {
+  results.innerHTML = "";
+  weatherBox.innerHTML = '<div class="card"><p class="message">Загружаем погоду…</p></div>';
+
+  try {
+    const url = new URL("https://api.open-meteo.com/v1/forecast");
+    url.search = new URLSearchParams({
+      latitude: city.latitude,
+      longitude: city.longitude,
+      current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+      timezone: "auto"
+    });
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Ошибка погоды");
+    const data = await response.json();
+    const w = data.current;
+    const [desc, icon] = description(w.weather_code);
+
+    const item = {
+      id: city.id ?? `${city.latitude},${city.longitude}`,
+      name: city.name,
+      admin1: city.admin1 || "",
+      latitude: city.latitude,
+      longitude: city.longitude,
+      temp: w.temperature_2m,
+      icon
+    };
+
+    recent = [item, ...recent.filter(c => String(c.id) !== String(item.id))].slice(0, 3);
+    try { localStorage.setItem("weather72_history", JSON.stringify(recent)); } catch {}
+    renderHistory();
+
+    weatherBox.innerHTML = `
+      <div class="card">
+        <div class="weather-top">
+          <div>
+            <h2 style="margin-top:0">${safe(city.name)}</h2>
+            <div class="message">${safe(city.admin1 || "Россия")}</div>
+          </div>
+          <div class="weather-icon">${icon}</div>
+        </div>
+        <div class="temperature">${Math.round(w.temperature_2m)}°</div>
+        <div class="description">${desc}</div>
+        <p class="message">Ощущается как ${Math.round(w.apparent_temperature)}°</p>
+        <div class="metrics">
+          <div class="metric"><small>Влажность</small><strong>${w.relative_humidity_2m}%</strong></div>
+          <div class="metric"><small>Ветер</small><strong>${Math.round(w.wind_speed_10m)} км/ч</strong></div>
+          <div class="metric"><small>Осадки</small><strong>${w.precipitation} мм</strong></div>
+        </div>
+      </div>`;
+  } catch {
+    weatherBox.innerHTML = '<div class="card"><h2>Не удалось загрузить погоду</h2><p class="message">Проверь соединение и попробуй ещё раз.</p></div>';
+  }
+}
+
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => searchCities(searchInput.value), 300);
+});
+
+results.addEventListener("click", e => {
+  const button = e.target.closest("[data-result]");
+  if (!button || !results._cities) return;
+  loadWeather(results._cities[Number(button.dataset.result)]);
+});
+
+historyBox.addEventListener("click", e => {
+  const button = e.target.closest("[data-history]");
+  if (!button) return;
+  const c = recent[Number(button.dataset.history)];
+  if (c) loadWeather(c);
+});
+
+renderHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1426;
+  --panel: #13213a;
+  --panel-soft: #182a47;
+  --line: rgba(180, 204, 240, .12);
+  --text: #f4f7ff;
+  --muted: #9aabc7;
+  --blue: #9ccaff;
+  --accent: #75b9ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh;
+  background: radial-gradient(ellipse at 85% -10%, #203d68 0, transparent 42%), var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+.app { width: min(100%, 680px); margin: 0 auto; padding: max(22px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)); }
+.topbar { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+.brand-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:16px; background:#253d63; color:#ffdb7d; font-size:28px; box-shadow: inset 0 0 0 1px #3c5680; }
+.brand-copy { flex:1; }
+h1 { margin:0; font-size:24px; letter-spacing:-.7px; }
+.brand-copy p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+.live-dot { width:9px; height:9px; border-radius:50%; background:#69d7a3; box-shadow:0 0 0 5px #69d7a31a; }
+.search-section { position:relative; }
+.search-box { display:flex; align-items:center; gap:10px; min-height:56px; padding:0 15px; border:1px solid #304565; border-radius:17px; background:rgba(19,33,58,.92); color:var(--blue); }
+.search-box > span { font-size:27px; transform:rotate(-20deg); line-height:1; }
+.search-box input { flex:1; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font-size:15px; }
+.search-box input::placeholder { color:#8295b4; }
+.clear-search { border:0; background:transparent; color:var(--muted); font-size:24px; }
+.hint { margin:9px 4px 0; color:#7f92b1; font-size:12px; }
+.search-results { position:absolute; z-index:5; top:68px; left:0; right:0; overflow:hidden; border:1px solid #344c70; border-radius:16px; background:#142440; box-shadow:0 18px 40px #0006; }
+.result-button { width:100%; display:flex; align-items:center; gap:12px; padding:13px 15px; border:0; border-bottom:1px solid var(--line); text-align:left; color:var(--text); background:transparent; }
+.result-button:last-child { border-bottom:0; }
+.result-button:active, .result-button:hover { background:#22395b; }
+.result-pin { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; background:#263f64; }
+.result-main { flex:1; }
+.result-city { display:block; font-weight:650; }
+.result-region { display:block; margin-top:3px; color:var(--muted); font-size:12px; }
+.section-heading { display:flex; justify-content:space-between; align-items:center; margin:27px 2px 12px; }
+.section-heading h2 { margin:0; font-size:15px; font-weight:700; }
+.section-note { color:#7f92b1; font-size:12px; }
+.history-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+.history-card { min-width:0; padding:13px 11px; border:1px solid var(--line); border-radius:15px; background:linear-gradient(145deg,#1b2e4c,#14233c); color:var(--text); text-align:left; }
+.history-card:active { transform:scale(.98); }
+.history-city { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:650; }
+.history-meta { display:block; margin-top:6px; color:var(--muted); font-size:11px; }
+.history-temp { display:block; margin-top:10px; font-size:23px; font-weight:650; letter-spacing:-.8px; }
+.history-icon { display:block; margin-top:6px; font-size:20px; }
+.empty-history { grid-column:1/-1; padding:16px; border:1px dashed #304565; border-radius:15px; color:#8498b8; font-size:13px; line-height:1.5; }
+.weather-panel { margin-top:18px; }
+.weather-placeholder, .weather-card { padding:24px 20px; border:1px solid var(--line); border-radius:23px; background:linear-gradient(150deg,rgba(31,54,87,.96),rgba(17,31,53,.98)); }
+.weather-placeholder { min-height:230px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.sun-art { margin-bottom:13px; font-size:48px; filter:drop-shadow(0 8px 18px #ffcf5b2a); }
+.weather-placeholder h2 { margin:0; font-size:18px; }
+.weather-placeholder p { max-width:290px; margin:9px 0 0; color:var(--muted); font-size:13px; line-height:1.55; }
+.weather-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.weather-location { margin:0; font-size:20px; line-height:1.3; }
+.weather-region { margin-top:5px; color:var(--muted); font-size:12px; }
+.weather-icon { font-size:42px; }
+.weather-temp-row { display:flex; align-items:center; gap:15px; margin:22px 0 8px; }
+.weather-temp { font-size:64px; line-height:1; letter-spacing:-3px; font-weight:650; }
+.weather-desc { color:#c7d7ee; font-size:14px; }
+.feels { margin-top:8px; color:var(--muted); font-size:12px; }
+.metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:22px; }
+.metric { padding:13px 10px; border-radius:14px; background:#ffffff09; }
+.metric-label { display:block; color:var(--muted); font-size:11px; }
+.metric-value { display:block; margin-top:7px; font-size:15px; font-weight:650; }
+.status { margin:16px 2px 0; color:var(--muted); font-size:12px; line-height:1.5; }
+footer { display:flex; justify-content:space-between; gap:10px; margin:24px 3px 0; color:#667c9d; font-size:10px; }
+.toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); z-index:10; max-width:calc(100% - 32px); padding:11px 16px; border:1px solid #3a5277; border-radius:12px; background:#1c3150; color:white; font-size:13px; opacity:0; pointer-events:none; transform:translate(-50%,10px); transition:.2s; }
+.toast.show { opacity:1; transform:translate(-50%,0); }
+[hidden] { display:none !important; }
+@media (max-width:380px) {
+  .app { padding-left:13px; padding-right:13px; }
+  .history-list { gap:6px; }
+  .history-card { padding:11px 8px; }
+  .history-city { font-size:12px; }
+  .history-temp { font-size:20px; }
+  .weather-temp { font-size:56px; }
+}
